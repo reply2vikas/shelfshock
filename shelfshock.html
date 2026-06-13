@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShelfShock — Retail Disruption Cascade Agent</title>
+<style>
+  :root{
+    --bg:#0C0F14;
+    --panel:#141A22;
+    --panel-2:#1A2129;
+    --line:#28313D;
+    --ink:#E8ECF1;
+    --muted:#8B97A6;
+    --supplier:#54C9B6;
+    --sku:#8590F2;
+    --store:#52A6E6;
+    --promo:#C18CE8;
+    --segment:#F0B354;
+    --shock:#FF4D52;
+    --shock-deep:#B3002D;
+    --safe:#7BD88F;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,"SF Pro Display",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:radial-gradient(1200px 600px at 70% -10%,#161E29 0%,var(--bg) 60%);
+    color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;min-height:100vh;
+  }
+  header.top{
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    padding:18px 26px;border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;flex-direction:column;gap:2px;margin-right:auto;}
+  .brand h1{
+    font-size:20px;font-weight:700;letter-spacing:-0.4px;margin:0;
+    display:flex;align-items:center;gap:10px;
+  }
+  .pulse-dot{
+    width:9px;height:9px;border-radius:50%;background:var(--shock);
+    box-shadow:0 0 0 0 rgba(255,77,82,.6);animation:beat 2.2s infinite;
+  }
+  @keyframes beat{0%{box-shadow:0 0 0 0 rgba(255,77,82,.55);}70%{box-shadow:0 0 0 9px rgba(255,77,82,0);}100%{box-shadow:0 0 0 0 rgba(255,77,82,0);}}
+  .brand p{margin:0;color:var(--muted);font-size:12.5px;letter-spacing:.2px;}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;}
+  .tag{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--panel);
+  }
+  .tag b{color:var(--ink);font-weight:600;}
+  .controls{display:flex;gap:10px;}
+  button{
+    font-family:var(--sans);font-size:13.5px;font-weight:600;cursor:pointer;
+    border-radius:10px;padding:11px 18px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);transition:transform .08s ease,border-color .15s,background .15s;
+  }
+  button:hover{border-color:#3a4756;}
+  button:active{transform:translateY(1px);}
+  button.primary{
+    background:linear-gradient(180deg,#FF5B60,var(--shock-deep));border-color:transparent;color:#fff;
+    box-shadow:0 6px 20px -8px rgba(255,77,82,.7);
+  }
+  button:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+
+  main{display:grid;grid-template-columns:1fr 380px;gap:0;flex:1;min-height:0;}
+  .stage{position:relative;padding:14px 10px 14px 18px;min-width:0;}
+  .stage svg{width:100%;height:100%;display:block;}
+  .col-cap{
+    position:absolute;top:18px;font-family:var(--mono);font-size:10.5px;
+    letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+  }
+
+  /* graph elements */
+  .edge{fill:none;stroke:#33404E;stroke-width:1.5;opacity:.55;transition:stroke .4s,opacity .4s,stroke-width .4s;}
+  .edge.active{stroke:var(--shock);opacity:.95;stroke-width:2.4;stroke-dasharray:7 6;animation:flow 1s linear infinite;}
+  @keyframes flow{to{stroke-dashoffset:-26;}}
+  .node rect{transition:stroke .35s,filter .35s,opacity .35s;}
+  .node .pillbg{fill:var(--panel-2);stroke:var(--line);stroke-width:1.5;}
+  .node .accent{height:42px;}
+  .node .nm{font-size:12.5px;font-weight:600;fill:var(--ink);}
+  .node .id{font-family:var(--mono);font-size:9.5px;fill:var(--muted);}
+  .node{cursor:default;}
+  .node.hit rect.pillbg{stroke:var(--shock);filter:drop-shadow(0 0 7px rgba(255,77,82,.55));}
+  .node.shock rect.pillbg{stroke:var(--shock);stroke-width:2.5;filter:drop-shadow(0 0 12px rgba(255,77,82,.8));}
+  .node.safe rect.pillbg{stroke:var(--safe);filter:drop-shadow(0 0 8px rgba(123,216,143,.6));}
+  .node.dim{opacity:.32;}
+  .ripple{fill:none;stroke:var(--shock);}
+
+  /* panel */
+  .panel{
+    background:var(--panel);border-left:1px solid var(--line);
+    padding:20px 20px 26px;overflow-y:auto;
+  }
+  .panel h2{
+    font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
+    margin:0 0 4px;font-weight:600;
+  }
+  .panel .lead{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.5;}
+  .empty{
+    border:1px dashed var(--line);border-radius:12px;padding:22px 18px;
+    color:var(--muted);font-size:13px;line-height:1.55;text-align:center;
+  }
+  .step{
+    border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:11px;
+    background:var(--panel-2);opacity:0;transform:translateY(8px);
+    transition:opacity .45s ease,transform .45s ease;
+  }
+  .step.show{opacity:1;transform:none;}
+  .step .head{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+  .step .num{
+    font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;
+    background:var(--shock-deep);border-radius:6px;padding:2px 7px;
+  }
+  .step.rec .num{background:#1c6b35;}
+  .step .title{font-size:13px;font-weight:700;letter-spacing:-0.2px;}
+  .step .body{font-size:12.7px;color:#C7D0DB;line-height:1.55;}
+  .step .body b{color:var(--ink);}
+  .cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+  .cite{
+    font-family:var(--mono);font-size:10px;color:#A9D9FF;
+    background:rgba(82,166,230,.12);border:1px solid rgba(82,166,230,.3);
+    border-radius:6px;padding:3px 7px;
+  }
+  .cite::before{content:"⛓ ";opacity:.7;}
+  .verdict{
+    margin-top:6px;border:1px solid rgba(123,216,143,.35);background:rgba(123,216,143,.08);
+    border-radius:12px;padding:14px;font-size:13px;line-height:1.55;color:#D7F0DD;
+    opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s;
+  }
+  .verdict.show{opacity:1;transform:none;}
+  .verdict b{color:#fff;}
+
+  /* tooltip */
+  #tip{
+    position:fixed;pointer-events:none;z-index:50;max-width:230px;
+    background:#0A0D11;border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;font-size:12px;color:var(--ink);opacity:0;
+    transition:opacity .12s;box-shadow:0 12px 30px -12px rgba(0,0,0,.8);
+  }
+  #tip .tid{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;}
+  #tip .tnm{font-weight:700;margin-bottom:4px;}
+  #tip .tmeta{color:#C7D0DB;line-height:1.45;}
+
+  footer{
+    border-top:1px solid var(--line);padding:11px 26px;color:var(--muted);
+    font-size:11.5px;font-family:var(--mono);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  @media (max-width:880px){
+    main{grid-template-columns:1fr;}
+    .panel{border-left:none;border-top:1px solid var(--line);max-height:none;}
+    .stage{height:62vh;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1><span class="pulse-dot"></span>ShelfShock</h1>
+      <p>Retail Disruption Cascade Agent — reasoning over a Fabric IQ ontology</p>
+    </div>
+    <div class="tags">
+      <span class="tag">Track · <b>Reasoning Agents</b></span>
+      <span class="tag">Engine · <b>Microsoft Foundry</b></span>
+      <span class="tag">Grounded by · <b>Fabric IQ</b></span>
+    </div>
+    <div class="controls">
+      <button class="primary" id="run">▶ Run cascade analysis</button>
+      <button id="reset" disabled>Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <svg id="graph" viewBox="0 0 940 580" preserveAspectRatio="xMidYMid meet" aria-label="Retail ontology graph"></svg>
+    </section>
+
+    <aside class="panel">
+      <h2>Reasoning trace</h2>
+      <p class="lead">Each step traverses one hop of the ontology. Every finding cites the exact graph node it came from — nothing is inferred without a source.</p>
+      <div id="steps">
+        <div class="empty">No event yet. Press <b>Run cascade analysis</b> to fire a recall on <span style="font-family:var(--mono);color:#A9D9FF">SKU-12345</span> and watch the shock propagate.</div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <span>EVENT · EVT-RECALL-1 · defect_recall · severity: high</span>
+    <span>ShelfShock · Agents League @ AISF 2026</span>
+  </footer>
+
+  <div id="tip"></div>
+
+<script>
+/* ---------- Seeded retail ontology (the Fabric IQ knowledge graph) ---------- */
+const ONT = {
+  suppliers:[
+    {id:"SUP-01", name:"NorthBay Foods", meta:"Reliability 0.82"},
+    {id:"SUP-07", name:"Verdant Dairy", meta:"Reliability 0.91"}
+  ],
+  skus:[
+    {id:"SKU-12345", name:"Organic Almond Milk", supplier:"SUP-01", recalled:true},
+    {id:"SKU-30000", name:"Granola 500g", supplier:"SUP-01"},
+    {id:"SKU-22100", name:"Soy Milk 1L", supplier:"SUP-07", substituteFor:["SKU-12345"]}
+  ],
+  stores:[
+    {id:"ST-001", name:"Indiranagar · BLR", stocks:["SKU-12345"], units:140},
+    {id:"ST-002", name:"Koramangala · BLR", stocks:["SKU-12345"], units:95},
+    {id:"ST-014", name:"T. Nagar · CHN", stocks:["SKU-12345"], units:60},
+    {id:"ST-021", name:"Jubilee Hills · HYD", stocks:["SKU-12345"], units:80}
+  ],
+  promotions:[
+    {id:"PROMO-9", name:"Breakfast Bundle", skus:["SKU-12345","SKU-30000"], weekly:48000},
+    {id:"PROMO-3", name:"Vegan Starter Pack", skus:["SKU-12345","SKU-22100"], weekly:26000}
+  ],
+  segments:[
+    {id:"SEG-A", name:"Health millennials", buys:["SKU-12345"], monthly:220000},
+    {id:"SEG-C", name:"Vegan households", buys:["SKU-12345"], monthly:90000}
+  ]
+};
+const RECALL = "SKU-12345";
+const rupee = n => "₹" + n.toLocaleString("en-IN");
+
+/* ---------- Layout ---------- */
+const POS = {
+  "SUP-01":[90,170],"SUP-07":[90,410],
+  "SKU-12345":[268,170],"SKU-30000":[268,290],"SKU-22100":[268,410],
+  "ST-001":[470,70],"ST-002":[470,170],"ST-014":[470,270],"ST-021":[470,370],
+  "PROMO-9":[668,200],"PROMO-3":[668,380],
+  "SEG-A":[858,200],"SEG-C":[858,380]
+};
+const TYPE = {SUP:"supplier",SKU:"sku",ST:"store",PROMO:"promo",SEG:"segment"};
+const colorOf = id => getComputedStyle(document.documentElement).getPropertyValue('--'+TYPE[id.split('-')[0]]).trim();
+
+const EDGES = [
+  ["SUP-01","SKU-12345"],["SUP-01","SKU-30000"],["SUP-07","SKU-22100"],
+  ["SKU-12345","ST-001"],["SKU-12345","ST-002"],["SKU-12345","ST-014"],["SKU-12345","ST-021"],
+  ["SKU-12345","PROMO-9"],["SKU-30000","PROMO-9"],["SKU-12345","PROMO-3"],["SKU-22100","PROMO-3"],
+  ["PROMO-9","SEG-A"],["PROMO-3","SEG-C"]
+];
+
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("graph");
+const W=132,H=42;
+const byId={};
+[...ONT.suppliers,...ONT.skus,...ONT.stores,...ONT.promotions,...ONT.segments].forEach(n=>byId[n.id]=n);
+
+function metaOf(n){
+  if(n.units!==undefined) return n.units+" units on shelf";
+  if(n.weekly!==undefined) return rupee(n.weekly)+" / week";
+  if(n.monthly!==undefined) return rupee(n.monthly)+" / month recurring";
+  if(n.substituteFor) return "Substitute for "+n.substituteFor.join(", ");
+  return n.meta||"";
+}
+
+/* column captions */
+[["SUPPLIER",40],["SKU",242],["STORE",444],["PROMOTION",628],["SEGMENT",832]].forEach(([t,x])=>{
+  const c=document.createElement("div");c.className="col-cap";c.textContent=t;c.style.left=(x/940*100)+"%";
+  document.querySelector(".stage").appendChild(c);
+});
+
+/* edges */
+const edgeEls={};
+EDGES.forEach(([a,b])=>{
+  const [x1,y1]=POS[a],[x2,y2]=POS[b];
+  const sx=x1+W/2, tx=x2-W/2, mx=(sx+tx)/2;
+  const p=document.createElementNS(NS,"path");
+  p.setAttribute("d",`M${sx},${y1} C${mx},${y1} ${mx},${y2} ${tx},${y2}`);
+  p.setAttribute("class","edge");
+  svg.appendChild(p);
+  edgeEls[a+">"+b]=p;
+});
+
+/* nodes */
+const nodeEls={};
+Object.keys(POS).forEach(id=>{
+  const n=byId[id], [x,y]=POS[id], col=colorOf(id);
+  const g=document.createElementNS(NS,"g"); g.setAttribute("class","node"); g.dataset.id=id;
+  const bg=document.createElementNS(NS,"rect");
+  bg.setAttribute("class","pillbg");bg.setAttribute("x",x-W/2);bg.setAttribute("y",y-H/2);
+  bg.setAttribute("width",W);bg.setAttribute("height",H);bg.setAttribute("rx",10);
+  const ac=document.createElementNS(NS,"rect");
+  ac.setAttribute("x",x-W/2);ac.setAttribute("y",y-H/2);ac.setAttribute("width",4);ac.setAttribute("height",H);
+  ac.setAttribute("rx",2);ac.setAttribute("fill",col);
+  const nm=document.createElementNS(NS,"text");
+  nm.setAttribute("class","nm");nm.setAttribute("x",x-W/2+14);nm.setAttribute("y",y-2);nm.textContent=n.name;
+  const idt=document.createElementNS(NS,"text");
+  idt.setAttribute("class","id");idt.setAttribute("x",x-W/2+14);idt.setAttribute("y",y+13);idt.textContent=id;
+  g.append(bg,ac,nm,idt);svg.appendChild(g);nodeEls[id]=g;
+
+  g.addEventListener("mousemove",e=>showTip(e,n));
+  g.addEventListener("mouseleave",hideTip);
+});
+
+/* tooltip */
+const tip=document.getElementById("tip");
+function showTip(e,n){
+  tip.innerHTML=`<div class="tid">${n.id} · ${TYPE[n.id.split('-')[0]]}</div>
+    <div class="tnm">${n.name}</div><div class="tmeta">${metaOf(n)}</div>`;
+  tip.style.opacity=1;
+  let x=e.clientX+14,y=e.clientY+14;
+  if(x+240>innerWidth)x=e.clientX-240;
+  tip.style.left=x+"px";tip.style.top=y+"px";
+}
+function hideTip(){tip.style.opacity=0;}
+
+/* ---------- Cascade computation (real traversal over ONT) ---------- */
+function compute(){
+  const stores=ONT.stores.filter(s=>s.stocks.includes(RECALL));
+  const promos=ONT.promotions.filter(p=>p.skus.includes(RECALL));
+  const segs=ONT.segments.filter(s=>s.buys.includes(RECALL));
+  const sub=ONT.skus.find(s=>(s.substituteFor||[]).includes(RECALL));
+  const units=stores.reduce((a,s)=>a+s.units,0);
+  const weekly=promos.reduce((a,p)=>a+p.weekly,0);
+  const segMonthly=segs.reduce((a,s)=>a+s.monthly,0);
+  return {stores,promos,segs,sub,units,weekly,promoMonthly:weekly*4,segMonthly};
+}
+
+/* ---------- Animation sequence ---------- */
+const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+const stepsEl=document.getElementById("steps");
+const runBtn=document.getElementById("run"), resetBtn=document.getElementById("reset");
+let timers=[];
+
+function addStep({num,title,body,cites,rec}){
+  const d=document.createElement("div");
+  d.className="step"+(rec?" rec":"");
+  d.innerHTML=`<div class="head"><span class="num">${num}</span><span class="title">${title}</span></div>
+    <div class="body">${body}</div>
+    ${cites?`<div class="cites">${cites.map(c=>`<span class="cite">${c}</span>`).join("")}</div>`:""}`;
+  stepsEl.appendChild(d);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add("show")));
+}
+function ripple(){
+  if(reduce)return;
+  const [x,y]=POS[RECALL];
+  for(let i=0;i<3;i++){
+    const c=document.createElementNS(NS,"circle");
+    c.setAttribute("class","ripple");c.setAttribute("cx",x);c.setAttribute("cy",y);
+    c.setAttribute("r",30);c.setAttribute("stroke-width",2);svg.appendChild(c);
+    const start=performance.now()+i*260;
+    (function anim(){
+      requestAnimationFrame(function frame(t){
+        const k=(t-start)/1100;
+        if(k<0){requestAnimationFrame(frame);return;}
+        if(k>1){c.remove();return;}
+        c.setAttribute("r",30+k*230);c.setAttribute("opacity",(1-k)*0.6);
+        requestAnimationFrame(frame);
+      });
+    })();
+  }
+}
+const hit=(id,cls="hit")=>nodeEls[id].classList.add(cls);
+const lite=(a,b)=>edgeEls[a+">"+b]&&edgeEls[a+">"+b].classList.add("active");
+
+function run(){
+  runBtn.disabled=true;
+  const r=compute();
+  const D=reduce?0:1; // time scaler
+  const at=(ms,fn)=>timers.push(setTimeout(fn,reduce?0:ms));
+
+  // step 0 — the shock
+  at(0,()=>{hit(RECALL,"shock");ripple();
+    addStep({num:"⚡",title:"Disruption detected",
+      body:`Supplier <b>NorthBay Foods</b> flagged a high-severity defect recall on <b>Organic Almond Milk</b>. Tracing the blast radius through the ontology…`,
+      cites:["SKU-12345","SUP-01","EVT-RECALL-1"]});
+  });
+
+  // step 1 — stores
+  at(850,()=>{
+    r.stores.forEach(s=>{lite(RECALL,s.id);hit(s.id);});
+    addStep({num:"1",title:"Stores affected",
+      body:`<b>${r.stores.length} stores</b> stock the recalled SKU — <b>${r.units} units</b> on shelves to pull.`,
+      cites:r.stores.map(s=>s.id)});
+  });
+
+  // step 2 — promotions
+  at(1700,()=>{
+    r.promos.forEach(p=>{lite(RECALL,p.id);hit(p.id);});
+    addStep({num:"2",title:"Promotions that break",
+      body:`<b>${r.promos.length} active bundles</b> depend on it and will break — worth <b>${rupee(r.weekly)}/week</b>.`,
+      cites:r.promos.map(p=>p.id)});
+  });
+
+  // step 3 — segments
+  at(2550,()=>{
+    r.promos.forEach(p=>r.segs.forEach(s=>{if(p.id==="PROMO-9"&&s.id==="SEG-A")lite(p.id,s.id);if(p.id==="PROMO-3"&&s.id==="SEG-C")lite(p.id,s.id);}));
+    r.segs.forEach(s=>hit(s.id));
+    addStep({num:"3",title:"Customer segments hit",
+      body:`<b>${r.segs.length} segments</b> regularly buy it — <b>${rupee(r.segMonthly)}/month</b> of recurring spend exposed.`,
+      cites:r.segs.map(s=>s.id)});
+  });
+
+  // step 4 — revenue
+  at(3400,()=>{
+    addStep({num:"4",title:"Revenue at risk",
+      body:`Directly attributable (broken bundles): <b>${rupee(r.promoMonthly)}/month</b>. Wider segment exposure: <b>${rupee(r.segMonthly)}/month</b>. Reporting the bundle figure as the defensible number to avoid double-counting.`,
+      cites:["PROMO-9","PROMO-3","SEG-A","SEG-C"]});
+  });
+
+  // step 5 — recommendation
+  at(4250,()=>{
+    if(r.sub){hit(r.sub.id,"safe");}
+    Object.keys(nodeEls).forEach(id=>{
+      if(!nodeEls[id].classList.contains("hit")&&!nodeEls[id].classList.contains("shock")&&!nodeEls[id].classList.contains("safe"))
+        nodeEls[id].classList.add("dim");
+    });
+    addStep({num:"✓",title:"Recommended intervention",rec:true,
+      body:`Pull <b>${r.units} units</b> of SKU-12345 from <b>${r.stores.length} stores</b>. Swap in <b>Soy Milk (${r.sub.id})</b> — the validated substitute — across both bundles. Notify the ${r.segs.length} exposed segments before stockout.`,
+      cites:[r.sub.id,"PROMO-9","PROMO-3"]});
+    const v=document.createElement("div");
+    v.className="verdict";
+    v.innerHTML=`<b>Net effect:</b> a ${rupee(r.promoMonthly)}/month hit contained to a planned substitution — every claim above traces to a node in the Fabric IQ graph, so the recommendation is auditable, not guessed.`;
+    stepsEl.appendChild(v);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>v.classList.add("show")));
+    resetBtn.disabled=false;
+  });
+}
+
+function reset(){
+  timers.forEach(clearTimeout);timers=[];
+  stepsEl.innerHTML=`<div class="empty">No event yet. Press <b>Run cascade analysis</b> to fire a recall on <span style="font-family:var(--mono);color:#A9D9FF">SKU-12345</span> and watch the shock propagate.</div>`;
+  Object.values(nodeEls).forEach(g=>g.className.baseVal="node");
+  Object.values(edgeEls).forEach(p=>p.classList.remove("active"));
+  runBtn.disabled=false;resetBtn.disabled=true;
+}
+runBtn.addEventListener("click",()=>{reset();stepsEl.innerHTML="";run();});
+resetBtn.addEventListener("click",reset);
+</script>
+</body>
+</html>
