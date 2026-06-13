@@ -1,0 +1,23 @@
+{
+  "suppliers": [
+    {"id": "SUP-01", "name": "NorthBay Foods", "reliability": 0.82}
+  ],
+  "skus": [
+    {"id": "SKU-12345", "name": "Organic Almond Milk 1L", "supplier": "SUP-01", "category": "Dairy-Alt"},
+    {"id": "SKU-22100", "name": "Soy Milk 1L", "supplier": "SUP-07", "category": "Dairy-Alt", "is_substitute_for": ["SKU-12345"]}
+  ],
+  "stores": [
+    {"id": "ST-001", "name": "Indiranagar", "city": "Bengaluru", "stocks": ["SKU-12345"], "units_on_shelf": 140},
+    {"id": "ST-002", "name": "Koramangala", "city": "Bengaluru", "stocks": ["SKU-12345"], "units_on_shelf": 95},
+    {"id": "ST-014", "name": "T. Nagar", "city": "Chennai", "stocks": ["SKU-12345"], "units_on_shelf": 60}
+  ],
+  "promotions": [
+    {"id": "PROMO-9", "name": "Healthy Breakfast Bundle", "skus": ["SKU-12345", "SKU-30000"], "active": true, "weekly_revenue": 48000}
+  ],
+  "customer_segments": [
+    {"id": "SEG-A", "name": "Health-conscious millennials", "buys": ["SKU-12345"], "monthly_spend": 220000}
+  ],
+  "events": [
+    {"id": "EVT-RECALL-1", "type": "defect_recall", "sku": "SKU-12345", "severity": "high", "note": "Supplier flagged packaging contamination"}
+  ]
+}
