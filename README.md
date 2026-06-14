@@ -21,3 +21,5 @@ Microsoft Foundry (agent) · Fabric IQ (ontology/graph) · GitHub Copilot (devel
 
 ## Status
 Hackathon MVP. See `docs/architecture.md` for the diagram. Future work: live Fabric workspace connection, real POS/inventory feeds.
+## The Demo Link
+https://youtu.be/MDkAtg73IL4
