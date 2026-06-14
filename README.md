@@ -1,3 +1,6 @@
+## The Demo Link
+https://youtu.be/MDkAtg73IL4
+
 # ShelfShock — Retail Disruption Cascade Agent
 
 > Trace how one retail disruption ripples across suppliers, stores, promotions, and shoppers — and get the optimal fix, grounded in a Fabric IQ business ontology.
@@ -21,5 +24,3 @@ Microsoft Foundry (agent) · Fabric IQ (ontology/graph) · GitHub Copilot (devel
 
 ## Status
 Hackathon MVP. See `docs/architecture.md` for the diagram. Future work: live Fabric workspace connection, real POS/inventory feeds.
-## The Demo Link
-https://youtu.be/MDkAtg73IL4
